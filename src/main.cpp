@@ -18,9 +18,9 @@ const uint16_t ETH_PURPLE = 0x63FD;
 const uint16_t COLOR_UP = TFT_GREEN;
 const uint16_t COLOR_DOWN = TFT_RED;
 
-// Paleta cyberpunk: morado + rosa neon
-const uint16_t CYBER_PURPLE = 0x983F; // #9D00FF
-const uint16_t CYBER_PINK = 0xF90F;   // #FF2079
+// Paleta "Terminal Violet": morado + plata, para titulos/datos destacados
+const uint16_t PALETTE_PRIMARY = 0xB25D; // #B14AED
+const uint16_t PALETTE_ACCENT = 0xCE5A;  // #C9C9D6
 
 // Chile: UTC-3 en horario de verano (vigente nov-ene)
 const long GMT_OFFSET_SEC = -3 * 3600;
@@ -202,12 +202,12 @@ void render() {
             break;
         }
         case SCR_WEATHER: {
-            tft.setTextColor(CYBER_PURPLE, TFT_BLACK);
+            tft.setTextColor(PALETTE_PRIMARY, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 10);
             tft.println("Clima Tu Ciudad");
 
-            tft.setTextColor(CYBER_PINK, TFT_BLACK);
+            tft.setTextColor(PALETTE_ACCENT, TFT_BLACK);
             tft.setTextSize(3);
             tft.setCursor(10, 50);
             if (!isnan(g_temp)) tft.printf("%.1f C\n", g_temp);
@@ -218,7 +218,7 @@ void render() {
             tft.setCursor(10, 85);
             tft.println(weatherCodeToText(g_weatherCode));
 
-            tft.setTextColor(CYBER_PURPLE, TFT_BLACK);
+            tft.setTextColor(PALETTE_PRIMARY, TFT_BLACK);
             tft.setCursor(10, 110);
             if (!isnan(g_wind)) tft.printf("Viento: %.1f km/h", g_wind);
             break;
@@ -237,7 +237,7 @@ void render() {
             }
             const Quote &q = QUOTES_ES[dayIndex];
 
-            tft.setTextColor(CYBER_PURPLE, TFT_BLACK);
+            tft.setTextColor(PALETTE_PRIMARY, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 10);
             tft.println("Frase del dia");
@@ -246,7 +246,7 @@ void render() {
             tft.setTextSize(1);
             drawWrapped(String(q.text), 10, 40, 220, 12);
 
-            tft.setTextColor(CYBER_PINK, TFT_BLACK);
+            tft.setTextColor(PALETTE_ACCENT, TFT_BLACK);
             tft.setCursor(10, 115);
             tft.print("- ");
             tft.println(q.author);
