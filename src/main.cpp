@@ -152,8 +152,8 @@ void drawWrapped(const String &text, int x, int y, int maxWidth, int lineHeight)
 }
 
 void drawCryptoScreen(const uint8_t *bitmap, int bw, int bh, uint16_t color,
-                       const char *label, float price, float change) {
-    tft.drawBitmap(5, 2, bitmap, bw, bh, color);
+                       const char *label, float price, float change, int logoX = 5) {
+    tft.drawBitmap(logoX, 2, bitmap, bw, bh, color);
 
     tft.setTextSize(2);
     tft.setTextColor(color, TFT_BLACK);
@@ -227,7 +227,10 @@ void render() {
             drawCryptoScreen(BTC_LOGO_BITMAP, BTC_LOGO_W, BTC_LOGO_H, BTC_ORANGE, "BTC", g_btcUsd, g_btcChange);
             break;
         case SCR_ETH:
-            drawCryptoScreen(ETH_LOGO_BITMAP, ETH_LOGO_W, ETH_LOGO_H, ETH_PURPLE, "ETH", g_ethUsd, g_ethChange);
+            // El glifo de ETH deja mas margen vacio a los lados dentro de su propio
+            // bitmap que el de BTC, asi que se dibuja mas a la derecha (+17px) para
+            // que el centro visual de ambos simbolos quede alineado en pantalla.
+            drawCryptoScreen(ETH_LOGO_BITMAP, ETH_LOGO_W, ETH_LOGO_H, ETH_PURPLE, "ETH", g_ethUsd, g_ethChange, 22);
             break;
         case SCR_QUOTE: {
             struct tm timeinfo;
