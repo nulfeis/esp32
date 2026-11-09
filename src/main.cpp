@@ -191,11 +191,11 @@ void render() {
                 strcpy(timeStr, "--:--:--");
                 strcpy(dateStr, "--/--/----");
             }
-            tft.setTextColor(TFT_CYAN, TFT_BLACK);
+            tft.setTextColor(PALETTE_ACCENT, TFT_BLACK);
             tft.setTextSize(4);
             tft.setCursor(10, 40);
             tft.println(timeStr);
-            tft.setTextColor(TFT_SILVER, TFT_BLACK);
+            tft.setTextColor(PALETTE_PRIMARY, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 90);
             tft.println(dateStr);
