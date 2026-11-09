@@ -8,10 +8,15 @@
 #include "certs.h"
 #include "wings_image.h"
 #include "btc_image.h"
+#include "eth_image.h"
+#include "quotes_es.h"
 #include "secrets.h"
 
-// Naranjo de Bitcoin #F7931A en RGB565
+// Naranjo de Bitcoin #F7931A y morado de Ethereum #627EEA, en RGB565
 const uint16_t BTC_ORANGE = 0xF483;
+const uint16_t ETH_PURPLE = 0x63FD;
+const uint16_t COLOR_UP = TFT_GREEN;
+const uint16_t COLOR_DOWN = TFT_RED;
 
 // Chile: UTC-3 en horario de verano (vigente nov-ene)
 const long GMT_OFFSET_SEC = -3 * 3600;
@@ -19,15 +24,15 @@ const int DAYLIGHT_OFFSET_SEC = 0;
 
 const char *WEATHER_URL =
     "https://api.open-meteo.com/v1/forecast?latitude=0.0000&longitude=0.0000&current_weather=true&timezone=America%2FSantiago";
-const char *BTC_URL = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
-const char *QUOTE_URL = "https://zenquotes.io/api/today";
+const char *CRYPTO_URL =
+    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true";
 
 const int BTN_LEFT = 0;
 const int BTN_RIGHT = 35;
 const unsigned long DEBOUNCE_MS = 200;
 const unsigned long AUTO_ROTATE_MS = 8000;
 
-enum Screen { SCR_CLOCK = 0, SCR_WEATHER, SCR_BTC, SCR_QUOTE, SCR_IMAGE, SCREEN_COUNT };
+enum Screen { SCR_CLOCK = 0, SCR_WEATHER, SCR_BTC, SCR_ETH, SCR_QUOTE, SCR_IMAGE, SCREEN_COUNT };
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -42,14 +47,10 @@ int g_weatherCode = -1;
 unsigned long g_lastWeatherFetch = 0;
 bool g_weatherOk = false;
 
-float g_btcUsd = NAN;
-unsigned long g_lastBtcFetch = 0;
-bool g_btcOk = false;
-
-String g_quote = "";
-String g_author = "";
-unsigned long g_lastQuoteFetch = 0;
-bool g_quoteOk = false;
+float g_btcUsd = NAN, g_btcChange = NAN;
+float g_ethUsd = NAN, g_ethChange = NAN;
+unsigned long g_lastCryptoFetch = 0;
+bool g_cryptoOk = false;
 
 const unsigned long FETCH_INTERVAL_MS = 10UL * 60UL * 1000UL; // 10 min
 const unsigned long RETRY_MS = 30UL * 1000UL;                 // 30 seg si falla
@@ -110,20 +111,14 @@ bool fetchWeather() {
     return true;
 }
 
-bool fetchBtc() {
+bool fetchCrypto() {
     JsonDocument doc;
-    if (!httpGetJson(BTC_URL, GTS_ROOT_R4, doc)) return false;
+    if (!httpGetJson(CRYPTO_URL, GTS_ROOT_R4, doc)) return false;
     g_btcUsd = doc["bitcoin"]["usd"] | NAN;
-    Serial.printf("BTC: %.0f USD\n", g_btcUsd);
-    return true;
-}
-
-bool fetchQuote() {
-    JsonDocument doc;
-    if (!httpGetJson(QUOTE_URL, ISRG_ROOT_X1, doc)) return false;
-    g_quote = doc[0]["q"] | "";
-    g_author = doc[0]["a"] | "";
-    Serial.printf("Frase: %s - %s\n", g_quote.c_str(), g_author.c_str());
+    g_btcChange = doc["bitcoin"]["usd_24h_change"] | NAN;
+    g_ethUsd = doc["ethereum"]["usd"] | NAN;
+    g_ethChange = doc["ethereum"]["usd_24h_change"] | NAN;
+    Serial.printf("BTC: $%.0f (%.2f%%)  ETH: $%.0f (%.2f%%)\n", g_btcUsd, g_btcChange, g_ethUsd, g_ethChange);
     return true;
 }
 
@@ -152,6 +147,31 @@ void drawWrapped(const String &text, int x, int y, int maxWidth, int lineHeight)
     }
 }
 
+void drawCryptoScreen(const uint8_t *bitmap, int bw, int bh, uint16_t color,
+                       const char *label, float price, float change) {
+    tft.drawBitmap(5, 2, bitmap, bw, bh, color);
+
+    tft.setTextSize(2);
+    tft.setTextColor(color, TFT_BLACK);
+    tft.setCursor(130, 15);
+    tft.println(label);
+
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextSize(2);
+    tft.setCursor(130, 45);
+    if (!isnan(price)) tft.printf("$%.0f", price);
+    else tft.println("Cargando...");
+
+    if (!isnan(change)) {
+        uint16_t changeColor = (change >= 0) ? COLOR_UP : COLOR_DOWN;
+        tft.setTextColor(changeColor, TFT_BLACK);
+        tft.setTextSize(2);
+        tft.setCursor(130, 75);
+        tft.printf("%s%.1f%%", (change >= 0 ? "+" : ""), change);
+    }
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+}
+
 void render() {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
@@ -167,57 +187,65 @@ void render() {
                 strcpy(timeStr, "--:--:--");
                 strcpy(dateStr, "--/--/----");
             }
+            tft.setTextColor(TFT_CYAN, TFT_BLACK);
             tft.setTextSize(4);
             tft.setCursor(10, 40);
             tft.println(timeStr);
+            tft.setTextColor(TFT_SILVER, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 90);
             tft.println(dateStr);
             break;
         }
         case SCR_WEATHER: {
+            tft.setTextColor(TFT_CYAN, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 10);
             tft.println("Clima Tu Ciudad");
+
+            tft.setTextColor(TFT_YELLOW, TFT_BLACK);
             tft.setTextSize(3);
             tft.setCursor(10, 50);
             if (!isnan(g_temp)) tft.printf("%.1f C\n", g_temp);
             else tft.println("-- C");
+
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 85);
             tft.println(weatherCodeToText(g_weatherCode));
+
+            tft.setTextColor(TFT_SILVER, TFT_BLACK);
             tft.setCursor(10, 110);
             if (!isnan(g_wind)) tft.printf("Viento: %.1f km/h", g_wind);
             break;
         }
-        case SCR_BTC: {
-            tft.drawBitmap(5, 10, BTC_LOGO_BITMAP, BTC_LOGO_W, BTC_LOGO_H, BTC_ORANGE);
-
-            tft.setTextSize(2);
-            tft.setCursor(130, 30);
-            tft.println("BTC");
-            tft.setTextSize(2);
-            tft.setCursor(130, 60);
-            tft.setTextColor(BTC_ORANGE, TFT_BLACK);
-            if (!isnan(g_btcUsd)) tft.printf("$%.0f", g_btcUsd);
-            else tft.println("Cargando...");
-            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+        case SCR_BTC:
+            drawCryptoScreen(BTC_LOGO_BITMAP, BTC_LOGO_W, BTC_LOGO_H, BTC_ORANGE, "BTC", g_btcUsd, g_btcChange);
             break;
-        }
+        case SCR_ETH:
+            drawCryptoScreen(ETH_LOGO_BITMAP, ETH_LOGO_W, ETH_LOGO_H, ETH_PURPLE, "ETH", g_ethUsd, g_ethChange);
+            break;
         case SCR_QUOTE: {
+            struct tm timeinfo;
+            int dayIndex = 0;
+            if (getLocalTime(&timeinfo)) {
+                dayIndex = timeinfo.tm_yday % QUOTES_ES_COUNT;
+            }
+            const Quote &q = QUOTES_ES[dayIndex];
+
+            tft.setTextColor(TFT_CYAN, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 10);
             tft.println("Frase del dia");
+
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
             tft.setTextSize(1);
-            if (g_quote.length()) {
-                drawWrapped(g_quote, 10, 40, 220, 12);
-                tft.setCursor(10, 115);
-                tft.print("- ");
-                tft.println(g_author);
-            } else {
-                tft.setCursor(10, 40);
-                tft.println("Cargando...");
-            }
+            drawWrapped(String(q.text), 10, 40, 220, 12);
+
+            tft.setTextColor(TFT_SILVER, TFT_BLACK);
+            tft.setCursor(10, 115);
+            tft.print("- ");
+            tft.println(q.author);
             break;
         }
         case SCR_IMAGE: {
@@ -254,10 +282,8 @@ void setup() {
 
     g_weatherOk = fetchWeather();
     g_lastWeatherFetch = millis();
-    g_btcOk = fetchBtc();
-    g_lastBtcFetch = millis();
-    g_quoteOk = fetchQuote();
-    g_lastQuoteFetch = millis();
+    g_cryptoOk = fetchCrypto();
+    g_lastCryptoFetch = millis();
 
     g_lastAutoRotate = millis();
     render();
@@ -296,18 +322,11 @@ void loop() {
         if (g_screen == SCR_WEATHER) g_dirty = true;
     }
 
-    unsigned long bInterval = g_btcOk ? FETCH_INTERVAL_MS : RETRY_MS;
-    if (now - g_lastBtcFetch >= bInterval) {
-        g_btcOk = fetchBtc();
-        g_lastBtcFetch = now;
-        if (g_screen == SCR_BTC) g_dirty = true;
-    }
-
-    unsigned long qInterval = g_quoteOk ? FETCH_INTERVAL_MS : RETRY_MS;
-    if (now - g_lastQuoteFetch >= qInterval) {
-        g_quoteOk = fetchQuote();
-        g_lastQuoteFetch = now;
-        if (g_screen == SCR_QUOTE) g_dirty = true;
+    unsigned long cInterval = g_cryptoOk ? FETCH_INTERVAL_MS : RETRY_MS;
+    if (now - g_lastCryptoFetch >= cInterval) {
+        g_cryptoOk = fetchCrypto();
+        g_lastCryptoFetch = now;
+        if (g_screen == SCR_BTC || g_screen == SCR_ETH) g_dirty = true;
     }
 
     // El reloj se redibuja cada segundo mientras esta visible
