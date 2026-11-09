@@ -202,12 +202,12 @@ void render() {
             break;
         }
         case SCR_WEATHER: {
-            tft.setTextColor(TFT_CYAN, TFT_BLACK);
+            tft.setTextColor(CYBER_PURPLE, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 10);
             tft.println("Clima Tu Ciudad");
 
-            tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+            tft.setTextColor(CYBER_PINK, TFT_BLACK);
             tft.setTextSize(3);
             tft.setCursor(10, 50);
             if (!isnan(g_temp)) tft.printf("%.1f C\n", g_temp);
@@ -218,7 +218,7 @@ void render() {
             tft.setCursor(10, 85);
             tft.println(weatherCodeToText(g_weatherCode));
 
-            tft.setTextColor(TFT_SILVER, TFT_BLACK);
+            tft.setTextColor(CYBER_PURPLE, TFT_BLACK);
             tft.setCursor(10, 110);
             if (!isnan(g_wind)) tft.printf("Viento: %.1f km/h", g_wind);
             break;
