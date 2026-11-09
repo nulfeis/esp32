@@ -18,6 +18,10 @@ const uint16_t ETH_PURPLE = 0x63FD;
 const uint16_t COLOR_UP = TFT_GREEN;
 const uint16_t COLOR_DOWN = TFT_RED;
 
+// Paleta cyberpunk: morado + rosa neon
+const uint16_t CYBER_PURPLE = 0x983F; // #9D00FF
+const uint16_t CYBER_PINK = 0xF90F;   // #FF2079
+
 // Chile: UTC-3 en horario de verano (vigente nov-ene)
 const long GMT_OFFSET_SEC = -3 * 3600;
 const int DAYLIGHT_OFFSET_SEC = 0;
@@ -233,7 +237,7 @@ void render() {
             }
             const Quote &q = QUOTES_ES[dayIndex];
 
-            tft.setTextColor(TFT_CYAN, TFT_BLACK);
+            tft.setTextColor(CYBER_PURPLE, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 10);
             tft.println("Frase del dia");
@@ -242,7 +246,7 @@ void render() {
             tft.setTextSize(1);
             drawWrapped(String(q.text), 10, 40, 220, 12);
 
-            tft.setTextColor(TFT_SILVER, TFT_BLACK);
+            tft.setTextColor(CYBER_PINK, TFT_BLACK);
             tft.setCursor(10, 115);
             tft.print("- ");
             tft.println(q.author);
