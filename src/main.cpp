@@ -27,7 +27,8 @@ const long GMT_OFFSET_SEC = -3 * 3600;
 const int DAYLIGHT_OFFSET_SEC = 0;
 
 const char *WEATHER_URL =
-    "https://api.open-meteo.com/v1/forecast?latitude=0.0000&longitude=0.0000&current_weather=true&timezone=America%2FSantiago";
+    "https://api.open-meteo.com/v1/forecast?latitude=" WEATHER_LAT "&longitude=" WEATHER_LON
+    "&current_weather=true&timezone=America%2FSantiago";
 const char *CRYPTO_URL =
     "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true";
 
@@ -205,7 +206,7 @@ void render() {
             tft.setTextColor(PALETTE_PRIMARY, TFT_BLACK);
             tft.setTextSize(2);
             tft.setCursor(10, 10);
-            tft.println("Clima Tu Ciudad");
+            tft.println("Clima " WEATHER_CITY_LABEL);
 
             tft.setTextColor(PALETTE_ACCENT, TFT_BLACK);
             tft.setTextSize(3);
