@@ -37,7 +37,14 @@ const int BTN_RIGHT = 35;
 const unsigned long DEBOUNCE_MS = 200;
 const unsigned long AUTO_ROTATE_MS = 8000;
 
-enum Screen { SCR_CLOCK = 0, SCR_WEATHER, SCR_BTC, SCR_ETH, SCR_QUOTE, SCR_IMAGE, SCREEN_COUNT };
+// GPIO36 es solo-entrada, sin pull resistors internos: ideal para el ADC del sensor.
+const int MOISTURE_PIN = 36;
+const unsigned long MOISTURE_READ_MS = 2000;
+// Valores crudos de referencia; hay que calibrarlos con el sensor en aire seco y en agua.
+const int MOISTURE_DRY_RAW = 3000;
+const int MOISTURE_WET_RAW = 1200;
+
+enum Screen { SCR_CLOCK = 0, SCR_WEATHER, SCR_BTC, SCR_ETH, SCR_QUOTE, SCR_IMAGE, SCR_MOISTURE, SCREEN_COUNT };
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -59,6 +66,23 @@ bool g_cryptoOk = false;
 
 const unsigned long FETCH_INTERVAL_MS = 10UL * 60UL * 1000UL; // 10 min
 const unsigned long RETRY_MS = 30UL * 1000UL;                 // 30 seg si falla
+
+int g_moistureRaw = 0;
+int g_moisturePercent = 0;
+unsigned long g_lastMoistureRead = 0;
+
+void readMoisture() {
+    long sum = 0;
+    const int samples = 8;
+    for (int i = 0; i < samples; i++) {
+        sum += analogRead(MOISTURE_PIN);
+        delay(2);
+    }
+    g_moistureRaw = sum / samples;
+    int pct = map(g_moistureRaw, MOISTURE_DRY_RAW, MOISTURE_WET_RAW, 0, 100);
+    g_moisturePercent = constrain(pct, 0, 100);
+    Serial.printf("Humedad: raw=%d pct=%d\n", g_moistureRaw, g_moisturePercent);
+}
 
 const char *weatherCodeToText(int code) {
     if (code == -1) return "Cargando...";
@@ -260,6 +284,33 @@ void render() {
             tft.drawBitmap(0, 0, WINGS_BITMAP, WINGS_W, WINGS_H, TFT_WHITE);
             break;
         }
+        case SCR_MOISTURE: {
+            tft.setTextColor(PALETTE_PRIMARY, TFT_BLACK);
+            tft.setTextSize(2);
+            tft.setCursor(10, 10);
+            tft.println("Humedad suelo");
+
+            uint16_t pctColor;
+            if (g_moisturePercent < 30) pctColor = COLOR_DOWN;
+            else if (g_moisturePercent < 60) pctColor = TFT_ORANGE;
+            else pctColor = COLOR_UP;
+
+            tft.setTextColor(pctColor, TFT_BLACK);
+            tft.setTextSize(4);
+            tft.setCursor(10, 45);
+            tft.printf("%d%%", g_moisturePercent);
+
+            int barX = 10, barY = 95, barW = 200, barH = 16;
+            tft.drawRect(barX, barY, barW, barH, TFT_WHITE);
+            int fillW = (barW - 2) * g_moisturePercent / 100;
+            tft.fillRect(barX + 1, barY + 1, fillW, barH - 2, pctColor);
+
+            tft.setTextColor(PALETTE_ACCENT, TFT_BLACK);
+            tft.setTextSize(1);
+            tft.setCursor(10, 120);
+            tft.printf("raw: %d", g_moistureRaw);
+            break;
+        }
     }
 }
 
@@ -292,6 +343,9 @@ void setup() {
     g_lastWeatherFetch = millis();
     g_cryptoOk = fetchCrypto();
     g_lastCryptoFetch = millis();
+
+    readMoisture();
+    g_lastMoistureRead = millis();
 
     g_lastAutoRotate = millis();
     render();
@@ -335,6 +389,12 @@ void loop() {
         g_cryptoOk = fetchCrypto();
         g_lastCryptoFetch = now;
         if (g_screen == SCR_BTC || g_screen == SCR_ETH) g_dirty = true;
+    }
+
+    if (now - g_lastMoistureRead >= MOISTURE_READ_MS) {
+        readMoisture();
+        g_lastMoistureRead = now;
+        if (g_screen == SCR_MOISTURE) g_dirty = true;
     }
 
     // El reloj se redibuja cada segundo mientras esta visible
