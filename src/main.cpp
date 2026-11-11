@@ -37,10 +37,10 @@ const int BTN_RIGHT = 35;
 const unsigned long DEBOUNCE_MS = 200;
 const unsigned long AUTO_ROTATE_MS = 8000;
 
-const int LED_PIN = 32;
-const int LED_BTN_PIN = 21;
-unsigned long g_lastLedButton = 0;
-bool g_ledState = false;
+const int BUZZER_PIN = 33;
+const unsigned long BUZZER_TOGGLE_MS = 1000;
+unsigned long g_lastBuzzerToggle = 0;
+bool g_buzzerState = false;
 
 // GPIO36 es solo-entrada, sin pull resistors internos: ideal para el ADC del sensor.
 const int MOISTURE_PIN = 36;
@@ -324,8 +324,7 @@ void setup() {
 
     pinMode(BTN_LEFT, INPUT_PULLUP);
     pinMode(BTN_RIGHT, INPUT_PULLUP);
-    pinMode(LED_PIN, OUTPUT);
-    pinMode(LED_BTN_PIN, INPUT_PULLUP);
+    pinMode(BUZZER_PIN, OUTPUT);
 
     tft.init();
     tft.setRotation(1);
@@ -361,10 +360,10 @@ void setup() {
 void loop() {
     unsigned long now = millis();
 
-    if (now - g_lastLedButton > DEBOUNCE_MS && digitalRead(LED_BTN_PIN) == LOW) {
-        g_ledState = !g_ledState;
-        digitalWrite(LED_PIN, g_ledState);
-        g_lastLedButton = now;
+    if (now - g_lastBuzzerToggle >= BUZZER_TOGGLE_MS) {
+        g_buzzerState = !g_buzzerState;
+        digitalWrite(BUZZER_PIN, g_buzzerState);
+        g_lastBuzzerToggle = now;
     }
 
     // Botones: cambio manual de pantalla
