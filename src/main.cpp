@@ -373,11 +373,13 @@ void loop() {
             g_dirty = true;
             g_lastButton = now;
             g_lastAutoRotate = now;
+            Serial.println("BTN_LEFT");
         } else if (digitalRead(BTN_RIGHT) == LOW) {
             g_screen = (g_screen + 1) % SCREEN_COUNT;
             g_dirty = true;
             g_lastButton = now;
             g_lastAutoRotate = now;
+            Serial.println("BTN_RIGHT");
         }
     }
 
