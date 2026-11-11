@@ -38,8 +38,8 @@ const unsigned long DEBOUNCE_MS = 200;
 const unsigned long AUTO_ROTATE_MS = 8000;
 
 const int LED_PIN = 32;
-const unsigned long LED_BLINK_MS = 500;
-unsigned long g_lastLedToggle = 0;
+const int LED_BTN_PIN = 21;
+unsigned long g_lastLedButton = 0;
 bool g_ledState = false;
 
 // GPIO36 es solo-entrada, sin pull resistors internos: ideal para el ADC del sensor.
@@ -325,6 +325,7 @@ void setup() {
     pinMode(BTN_LEFT, INPUT_PULLUP);
     pinMode(BTN_RIGHT, INPUT_PULLUP);
     pinMode(LED_PIN, OUTPUT);
+    pinMode(LED_BTN_PIN, INPUT_PULLUP);
 
     tft.init();
     tft.setRotation(1);
@@ -360,10 +361,10 @@ void setup() {
 void loop() {
     unsigned long now = millis();
 
-    if (now - g_lastLedToggle >= LED_BLINK_MS) {
+    if (now - g_lastLedButton > DEBOUNCE_MS && digitalRead(LED_BTN_PIN) == LOW) {
         g_ledState = !g_ledState;
         digitalWrite(LED_PIN, g_ledState);
-        g_lastLedToggle = now;
+        g_lastLedButton = now;
     }
 
     // Botones: cambio manual de pantalla
