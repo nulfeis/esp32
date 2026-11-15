@@ -26,8 +26,35 @@ Además del dashboard, el firmware incluye una prueba de hardware externo conect
 
 - **Buzzer activo (GPIO33)** — toggle automático cada 1s, sin botón. El cableado todavía no se confirmó funcionando.
 - El sensor de humedad (Grove, por GPIO36) se probó pero se sacó del firmware — el pipeline de lectura funcionaba, pero el método de conexión sin soldar daba contacto intermitente. Queda pendiente para cuando se solucione el cableado (soldando o con cables dupont hembra-macho reales).
+- **LED en 3V3/GND directo** — sin pasar por ningún GPIO ni código: dos cables macho-macho llevan el 3V3 (fila 52) y el GND (fila 62) de la columna J hacia otra zona libre del protoboard, y ahí el LED queda permanentemente encendido. Confirmado funcionando.
+- Se intentó controlar ese LED con un botón externo de 4 patas (vía GPIO, con lógica en el firmware) para encenderlo solo al presionar — **no se logró hacer funcionar** y se descartó por ahora. El botón en sí nunca se confirmó cerrando el circuito (puede ser el componente, el cableado, o la combinación de patas usada).
 
-Esta prueba convive con el dashboard en el mismo firmware pero no está integrada a ninguna pantalla.
+Esta prueba convive con el dashboard en el mismo firmware pero no está integrada a ninguna pantalla ni a ningún GPIO — es solo cableado.
+
+### Pinout físico en la protoboard (este TTGO T-Display)
+
+La placa va montada sobre 2 rieles de pines macho (10 posiciones c/u) clavados en las columnas **B** e **I**, filas 52-63. Los nombres impresos en la placa, de la fila 52 a la 63:
+
+| Fila | Columna I | Columna B |
+|------|-----------|-----------|
+| 52   | 3V3       | GND       |
+| 53   | 36        | 8         |
+| 54   | 37        | 21        |
+| 55   | 38        | 22        |
+| 56   | 39        | 17        |
+| 57   | 32        | 2         |
+| 58   | 33 (BUZZER_PIN) | 15  |
+| 59   | 25        | 13        |
+| 60   | 26        | 12        |
+| 61   | 27        | GND       |
+| 62   | GND       | GND       |
+| 63   | 5V        | 3V3       |
+
+Los botones físicos de la placa (GPIO0 y GPIO35) no aparecen en esta lista porque no están en los headers — vienen integrados en el PCB. GPIO12 y GPIO2 (fila 60 y 57) son pines de "strapping" (afectan el modo de arranque si algo externo los fuerza a un nivel durante el reset) — evitar colgarles algo que imponga un nivel fijo al encender la placa.
+
+**Importante:** el cuerpo del ESP32 queda montado encima de las columnas intermedias (C, D, E de un lado; F, G, H del otro), tapándolas físicamente. Los únicos huecos libres en cada fila para cablear algo (LED, jumper, etc.) son la **columna A** (lado de la columna B) y la **columna J** (lado de la columna I).
+
+**Lección aprendida:** varias sesiones de debugging con contactos intermitentes (a veces prendía, a veces no, en los mismos puntos) resultaron ser porque el ESP32 no estaba bien apretado contra el protoboard, no un problema de cableado ni de columnas tapadas. Si algo que debería funcionar da resultados inconsistentes, lo primero a revisar es presionar la placa firme contra el protoboard.
 
 ## Cómo correrlo
 
