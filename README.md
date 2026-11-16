@@ -56,6 +56,14 @@ Los botones físicos de la placa (GPIO0 y GPIO35) no aparecen en esta lista porq
 
 **Lección aprendida:** varias sesiones de debugging con contactos intermitentes (a veces prendía, a veces no, en los mismos puntos) resultaron ser porque el ESP32 no estaba bien apretado contra el protoboard, no un problema de cableado ni de columnas tapadas. Si algo que debería funcionar da resultados inconsistentes, lo primero a revisar es presionar la placa firme contra el protoboard.
 
+## Herramientas de soldadura
+
+Para resolver el contacto intermitente del sensor de humedad (y evitar depender de conexiones a presión en el protoboard), se suma este equipo:
+
+- **Kit de cautín regulable** (60W, 200-450°C, puntas intercambiables serie 900M, bomba desoldadora, pinzas de precisión ESD-15, pelacables, soporte con esponja) — para soldar los pines del sensor y dejar esas conexiones firmes.
+- **Pasta para soldar**, además del estaño que trae el kit — ayuda a que el estaño moje bien la pata del componente en vez de quedar en bolitas.
+- **Tercera mano con lupa y luz LED** (pinzas tipo cocodrilo + lente de aumento + soporte para el cautín) — sostiene el sensor o los cables mientras se suelda con las dos manos libres, y la lupa ayuda a ver bien pines chicos. Necesita 3 pilas AAA (no incluidas).
+
 ## Cómo correrlo
 
 El proyecto usa [PlatformIO](https://platformio.org/) dentro de un entorno virtual de Python manejado con [`uv`](https://github.com/astral-sh/uv), para no instalar nada a nivel de sistema.
